@@ -10,9 +10,10 @@ import com.ebank.account.model.Customer;
 
 /**
  * Declarative REST client: "customer-service" is resolved through Eureka, so no
- * host or port is hard-coded here.
+ * host or port is hard-coded here. Each call goes through a Resilience4j circuit
+ * breaker that falls back to {@link CustomerRestClientFallbackFactory}.
  */
-@FeignClient(name = "customer-service")
+@FeignClient(name = "customer-service", fallbackFactory = CustomerRestClientFallbackFactory.class)
 public interface CustomerRestClient {
 
 	@GetMapping("/api/customers/{id}")

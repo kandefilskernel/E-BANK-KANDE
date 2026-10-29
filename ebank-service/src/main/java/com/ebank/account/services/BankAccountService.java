@@ -59,6 +59,11 @@ public class BankAccountService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"Customer " + request.customerId() + " does not exist");
 		}
+		// Got the circuit breaker placeholder: the customer cannot be checked, so do not open the account
+		if (customer.equals(Customer.unavailable(request.customerId()))) {
+			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+					"customer-service is unavailable, try again later");
+		}
 		// The id is assigned here, so save() merges and returns a new instance without the transient customer
 		BankAccount saved = bankAccountRepository.save(account);
 		saved.setCustomer(customer);
