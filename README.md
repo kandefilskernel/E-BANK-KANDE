@@ -8,14 +8,22 @@
 |---|---|---|
 | `discovery-service` | 8761 | Annuaire Eureka : chaque service s'y enregistre et y découvre les autres |
 | `gateway-service` | 8888 | Spring Cloud Gateway : point d'entrée unique, routage vers les services via Eureka (`lb://`), CORS pour le front-end |
-| `customer-service` | 8081 | Gestion des clients (CRUD, H2) |
-| `ebank-service` | 8082 | Gestion des comptes bancaires et des virements (H2). Récupère les clients via **OpenFeign**, protégé par un **Circuit Breaker Resilience4j** |
+| `customer-service` | 8081 | Gestion des clients (CRUD, base PostgreSQL `customers_db`) |
+| `ebank-service` | 8082 | Gestion des comptes bancaires et des virements (base PostgreSQL `accounts_db`). Récupère les clients via **OpenFeign**, protégé par un **Circuit Breaker Resilience4j** |
 
-Stack : Spring Boot 4.1.2, Spring Cloud 2025.1, Java 25.
+Stack : Spring Boot 4.1.2, Spring Cloud 2025.1, Java 25, PostgreSQL 17 (Docker).
+
+Chaque microservice a sa propre base (*database per service*) : `ebank-service` ne lit jamais la table des clients, il passe par l'API de `customer-service`.
 
 ### Lancer le projet
 
-Démarrer les services dans cet ordre, chacun dans son terminal (Maven n'a pas besoin d'être installé, `mvnw.cmd` le télécharge) :
+Démarrer d'abord PostgreSQL (Docker Desktop doit être lancé). Les données sont conservées dans un volume Docker entre les redémarrages :
+
+```bash
+docker compose up -d
+```
+
+Puis démarrer les services dans cet ordre, chacun dans son terminal (Maven n'a pas besoin d'être installé, `mvnw.cmd` le télécharge) :
 
 ```bash
 cd discovery-service; .\mvnw.cmd spring-boot:run
@@ -40,7 +48,7 @@ Les services mettent jusqu'à ~30 s à se découvrir via Eureka : pendant ce tem
 | POST | `/api/accounts` | Ouvrir un compte `{"customerId", "type": "CURRENT_ACCOUNT" \| "SAVING_ACCOUNT", "initialBalance", "currency"}` |
 | POST | `/api/accounts/transfer` | Virement `{"fromAccountId", "toAccountId", "amount"}` |
 
-Outils : tableau de bord Eureka http://localhost:8761, consoles H2 `/h2-console` sur chaque service (`jdbc:h2:mem:customers-db`, `jdbc:h2:mem:accounts-db`), état des circuits http://localhost:8082/actuator/circuitbreakers.
+Outils : tableau de bord Eureka http://localhost:8761, pgAdmin http://localhost:5050 (`admin@ebank.com` / `admin` ; serveur `postgres`, utilisateur `ebank` / `ebank`), état des circuits http://localhost:8082/actuator/circuitbreakers.
 
 ### Tolérance aux pannes
 

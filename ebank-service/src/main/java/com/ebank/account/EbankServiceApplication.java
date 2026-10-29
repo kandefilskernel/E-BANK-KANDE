@@ -23,10 +23,13 @@ public class EbankServiceApplication {
 		SpringApplication.run(EbankServiceApplication.class, args);
 	}
 
-	// Two accounts for each customer seeded by customer-service (ids 1 to 3)
+	// Two accounts for each customer seeded by customer-service (ids 1 to 3), only when the database is empty
 	@Bean
 	CommandLineRunner seedAccounts(BankAccountRepository bankAccountRepository) {
 		return args -> {
+			if (bankAccountRepository.count() > 0) {
+				return;
+			}
 			for (long customerId = 1; customerId <= 3; customerId++) {
 				for (AccountType type : AccountType.values()) {
 					bankAccountRepository.save(new BankAccount(UUID.randomUUID().toString(),
